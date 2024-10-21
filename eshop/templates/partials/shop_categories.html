@@ -1,0 +1,13 @@
+<ul class="list-unstyled fruite-categorie">
+    {% for category in categories %}
+        <li>
+            <div class="d-flex justify-content-between fruite-name">
+                <a href="{% url 'eshop:category' category.slug %}">
+                    <i class="fas fa-apple-alt me-2"></i>
+                    {{ category.name }}
+                </a>
+                <span>(3)</span>
+            </div>
+        </li>
+    {% endfor %}
+</ul>
