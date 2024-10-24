@@ -14,6 +14,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -26,6 +27,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'eshop',
     'mptt',
+    'versatileimagefield'
 ]
 
 MIDDLEWARE = [
@@ -37,6 +39,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'eshop.middleware.normalize_url_middleware.NormalizeUrlMiddleware',
 ]
 
 ROOT_URLCONF = 'e_commerce.urls'
@@ -53,6 +56,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'eshop.context_processors.cart_context',
             ],
         },
     },

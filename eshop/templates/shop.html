@@ -19,14 +19,27 @@
                         <div class="col-6"></div>
                         <div class="col-xl-3">
                             <div class="bg-light ps-3 py-3 rounded d-flex justify-content-between mb-4">
-                                <label for="fruits">Default Sorting:</label>
-                                <select id="fruits" name="fruitlist" class="border-0 form-select-sm bg-light me-3"
-                                        form="fruitform">
-                                    <option value="volvo">Nothing</option>
-                                    <option value="saab">Popularity</option>
-                                    <option value="opel">Organic</option>
-                                    <option value="audi">Fantastic</option>
-                                </select>
+                                <form method="GET" class="d-inline-block">
+                                    {% if search_query %}
+                                        <input type="hidden" name="search" value="{{ search_query }}">
+                                    {% endif %}
+
+                                    {% if max_price %}
+                                        <input type="hidden" name="max_price" value="{{ max_price }}">
+                                    {% endif %}
+
+                                    <label for="tag">Default Sorting:</label>
+                                    <select id="tag" name="tag" class="border-0 form-select-sm bg-light me-3"
+                                            onchange="this.form.submit()">
+                                        <option value="">ყველა თეგი</option>
+                                        {% for tag in tags %}
+                                            <option value="{{ tag.name }}"
+                                                    {% if selected_tag == tag.name %}selected{% endif %}>
+                                                {{ tag.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -41,46 +54,40 @@
 
                                     </div>
                                 </div>
+
                                 <div class="col-lg-12">
+
                                     <div class="mb-3">
-                                        <h4 class="mb-2">Price</h4>
-                                        <input type="range" class="form-range w-100" id="rangeInput" name="rangeInput"
-                                               min="0" max="500" value="0" oninput="amount.value=rangeInput.value">
-                                        <output id="amount" name="amount" min-velue="0" max-value="500"
-                                                for="rangeInput">0
-                                        </output>
+
+                                        <form action="" method="GET">
+                                            <h4 class="mb-2">Price</h4>
+                                            <input type="range" class="form-range w-100"
+                                                   id="maxPrice" name="max_price" min="0" max="500"
+                                                   value="{{ max_price }}" oninput="priceOutput.value=maxPrice.value">
+                                            <output id="priceOutput" for="maxPrice">{{ max_price }}</output>
+
+                                            <h4 class="mt-3">თეგები</h4>
+                                            {% for tag in tags %}
+                                                <div class="mb-2">
+                                                    <label>
+                                                        <input type="radio" class="me-2"
+                                                               name="tag"
+                                                               value="{{ tag.name }}"
+                                                               {% if tag.name == selected_tag %}checked{% endif %}>
+                                                    </label>
+                                                    <label>{{ tag.name }}</label>
+                                                </div>
+                                            {% endfor %}
+
+                                            <input type="submit" value="ფილტრი" class="btn btn-primary mt-3">
+                                        </form>
+
+
                                     </div>
+
+
                                 </div>
-                                <div class="col-lg-12">
-                                    <div class="mb-3">
-                                        <h4>Additional</h4>
-                                        <div class="mb-2">
-                                            <input type="radio" class="me-2" id="Categories-1" name="Categories-1"
-                                                   value="Beverages">
-                                            <label for="Categories-1"> Organic</label>
-                                        </div>
-                                        <div class="mb-2">
-                                            <input type="radio" class="me-2" id="Categories-2" name="Categories-1"
-                                                   value="Beverages">
-                                            <label for="Categories-2"> Fresh</label>
-                                        </div>
-                                        <div class="mb-2">
-                                            <input type="radio" class="me-2" id="Categories-3" name="Categories-1"
-                                                   value="Beverages">
-                                            <label for="Categories-3"> Sales</label>
-                                        </div>
-                                        <div class="mb-2">
-                                            <input type="radio" class="me-2" id="Categories-4" name="Categories-1"
-                                                   value="Beverages">
-                                            <label for="Categories-4"> Discount</label>
-                                        </div>
-                                        <div class="mb-2">
-                                            <input type="radio" class="me-2" id="Categories-5" name="Categories-1"
-                                                   value="Beverages">
-                                            <label for="Categories-5"> Expired</label>
-                                        </div>
-                                    </div>
-                                </div>
+
                                 <div class="col-lg-12">
                                     <h4 class="mb-3">Featured products</h4>
                                     <div class="d-flex align-items-center justify-content-start">
@@ -168,7 +175,7 @@
                                         <div class="col-md-6 col-lg-6 col-xl-4">
                                             <div class="rounded position-relative fruite-item">
                                                 <div class="fruite-img">
-                                                    <img src="{{ product.image.url }}"
+                                                    <img src="{{ product.image.thumbnail.200x200 }}"
                                                          class="img-fluid w-100 rounded-top" alt="{{ product.name }}">
                                                 </div>
                                                 <div class="text-white bg-secondary px-3 py-1 rounded position-absolute"
@@ -178,7 +185,8 @@
                                                 <div class="p-4 border border-secondary border-top-0 rounded-bottom">
                                                     <h4>{{ product.name }}</h4>
                                                     <p>{{ product.description }}</p>
-                                                    <div class="d-flex justify-content-between flex-lg-wrap" style="display: flex; flex-direction: column; gap: 20px">
+                                                    <div class="d-flex justify-content-between flex-lg-wrap"
+                                                         style="display: flex; flex-direction: column; gap: 20px">
                                                         <p class="text-dark fs-5 fw-bold mb-0">${{ product.price }}</p>
 
                                                         <a href="{% url 'eshop:product' product.slug %}"
@@ -186,11 +194,21 @@
                                                             <i class="fa fa-eye me-2 text-primary"></i> View Product
                                                         </a>
 
-                                                        <a href="{% url 'eshop:cart' %}"
-                                                           class="btn border border-secondary rounded-pill px-3 text-primary">
-                                                            <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-                                                            Cart
-                                                        </a>
+                                                        <!-- Add to Cart Form -->
+                                                        <form action="{% url 'eshop:cart' %}" method="POST">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="action" value="add">
+                                                            <input type="hidden" name="product_id"
+                                                                   value="{{ product.id }}">
+                                                            <input type="hidden" name="quantity" value="1">
+                                                            <!-- Default quantity to 1 -->
+                                                            <button type="submit"
+                                                                    class="btn border border-secondary rounded-pill px-3 text-primary">
+                                                                <i class="fa fa-shopping-bag me-2 text-primary"></i> Add
+                                                                to Cart
+                                                            </button>
+                                                        </form>
+
                                                     </div>
                                                 </div>
                                             </div>

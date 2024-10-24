@@ -1,8 +1,13 @@
 <div class="col-xl-3">
-    <div class="input-group w-100 mx-auto d-flex">
-        <input type="search" class="form-control p-3" placeholder="keywords"
+    <form action="" method="GET" class="input-group w-100 mx-auto d-flex">
+        <input type="search"
+               class="form-control p-3"
+               placeholder="Search products..."
+               name="search"
+               value="{{ search_query }}"
                aria-describedby="search-icon-1">
-        <span id="search-icon-1" class="input-group-text p-3"><i
-                class="fa fa-search"></i></span>
-    </div>
+        <button type="submit" class="input-group-text p-3" id="search-icon-1">
+            <i class="fa fa-search"></i>
+        </button>
+    </form>
 </div>

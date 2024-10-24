@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Review, Cart, CartItem, Order
+from .models import Category, Product, Review, Cart, CartItem, Order, Tag
 from mptt.admin import DraggableMPTTAdmin
 
 
@@ -13,7 +13,7 @@ class CategoryAdmin(DraggableMPTTAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'price', 'quality', 'min_weight')
-    list_filter = ('category', 'quality', 'price')
+    list_filter = ('category', 'quality', 'price', 'tags')
     search_fields = ('name', 'description')
     list_editable = ('price', 'min_weight')
 
@@ -44,3 +44,8 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ('status', 'created_at')
     search_fields = ('user__username', 'id')
 
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
