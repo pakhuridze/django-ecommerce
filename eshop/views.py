@@ -1,38 +1,74 @@
-from django.core.paginator import Paginator
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Cart, CartItem, Product,  Tag, Category
+from .models import Cart, CartItem, Product, Tag, Category
+from django.shortcuts import redirect, get_object_or_404
+from django.views.generic import ListView, DetailView, TemplateView, View, FormView
+from django.http import HttpResponseNotAllowed
+from django import forms
 
 
-# Create your views here.
-def index(request):
-    cart_items_count = CartItem.objects.filter(cart__user=request.user).count()
-    print(cart_items_count)
-    return render(request, 'index.html', {'cart_items_count': cart_items_count})
+class NotAllowedMixin(View):
+    def dispatch(self, request, *args, **kwargs):
+        if request.method not in ["GET", "OPTIONS"]:
+            return HttpResponseNotAllowed(['GET', 'OPTIONS'])
+        return super().dispatch(request, *args, **kwargs)
 
 
-
-def contact(request):
-    return render(request, 'contact.html')
-
+class IndexView(NotAllowedMixin, TemplateView):
+    template_name = 'index.html'
 
 
-def cart(request):
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_items = cart.items.all()
+class ContactView(NotAllowedMixin, TemplateView):
+    template_name = 'contact.html'
 
-    if request.method == "POST":
-        product_id = request.POST.get("product_id")
-        quantity = int(request.POST.get("quantity", 1))
-        action = request.POST.get("action")
+
+class CartForm(forms.Form):
+    product_id = forms.IntegerField()
+    quantity = forms.IntegerField(min_value=1, initial=1)
+    action = forms.ChoiceField(choices=[("add", "Add"), ("increase", "Increase"),
+                                        ("decrease", "Decrease"), ("remove", "Remove")])
+
+    def clean(self):
+        cleaned_data = super().clean()
+        product_id = cleaned_data.get("product_id")
+        if not product_id:
+            raise forms.ValidationError("Product ID is required")
+        return cleaned_data
+
+
+class CartView(FormView):
+    template_name = 'cart.html'
+    form_class = CartForm
+
+    def get_cart(self):
+        """Retrieve the cart and related items in a single query."""
+        return Cart.objects.prefetch_related('items__product').get_or_create(user=self.request.user)[0]
+
+    def get_context_data(self, **kwargs):
+        """Add cart items and total price to the context with fewer queries."""
+        context = super().get_context_data(**kwargs)
+        cart = self.get_cart()
+
+        # Avoid hitting the database repeatedly by using pre-fetched items
+        cart_items_with_total = [
+            {'item': item, 'total_price': item.product.price * item.quantity}
+            for item in cart.items.all()
+        ]
+
+        context['cart_items_with_total'] = cart_items_with_total
+        context['total_price'] = sum(item['total_price'] for item in cart_items_with_total)
+        return context
+
+    def form_valid(self, form):
+        """Handle form submission to modify cart items."""
+        cart = self.get_cart()
+        product_id = form.cleaned_data['product_id']
+        quantity = form.cleaned_data['quantity']
+        action = form.cleaned_data['action']
 
         product = get_object_or_404(Product, id=product_id)
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
 
         if action == "add":
-            if created:
-                cart_item.quantity = quantity
-            else:
-                cart_item.quantity += quantity
+            cart_item.quantity = quantity if created else cart_item.quantity + quantity
             cart_item.save()
 
         elif action == "increase":
@@ -51,67 +87,73 @@ def cart(request):
 
         return redirect('eshop:cart')
 
-    cart_items_with_total = [
-        {
-            'item': item,
-            'total_price': item.product.price * item.quantity
-        }
-        for item in cart_items
-    ]
 
-    total_price = sum(item['total_price'] for item in cart_items_with_total)
-
-    return render(request, 'cart.html', {
-        'cart_items_with_total': cart_items_with_total,
-        'total_price': total_price,
-    })
+class ProductDetailView(NotAllowedMixin, DetailView):
+    model = Product
+    template_name = 'shop_detail.html'
+    context_object_name = 'product'
+    slug_url_kwarg = 'slug'
 
 
-def product(request, slug):
-    get_product = get_object_or_404(Product, slug=slug)
-    return render(request, 'shop_detail.html', {'product': get_product})
+class CheckoutView(NotAllowedMixin, TemplateView):
+    template_name = 'checkout.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Assuming you have cart items stored in the session or database
+        cart_items = CartItem.objects.filter(cart=self.request.user.cart)
+        context['cart_items'] = cart_items
+        # Calculate total
+        context['total'] = sum(item.product.price * item.quantity for item in cart_items)
+        return context
 
 
-def checkout(request):
-    return render(request, 'checkout.html')
+class ProductListView(NotAllowedMixin, ListView):
+    model = Product
+    template_name = 'shop.html'
+    context_object_name = 'products'
+    paginate_by = 2
 
+    def get_queryset(self):
+        # Get the category slug from the URL
+        slug = self.kwargs.get('slug', 'all')
+        tag_filter = self.request.GET.get('tag')
+        max_price = self.request.GET.get('max_price', 500)
+        search_query = self.request.GET.get('search', '')
 
-def category(request, slug=None):
-    tag_filter = request.GET.get('tag')
-    max_price = request.GET.get('max_price', 500)
-    search_query = request.GET.get('search', '')
+        # Filter products based on category slug
+        # If the slug is 'all', get all products
+        if slug is None or slug == 'all':
+            queryset = Product.objects.all().order_by('id')
+        else:
+            # Get the category object based on the slug
+            category_obj = get_object_or_404(Category, slug=slug)
+            queryset = Product.objects.filter(category=category_obj).order_by('id')
 
-    if slug is None or slug == 'all':
-        products = Product.objects.all().order_by('id')
-    else:
-        category_obj = get_object_or_404(Category, slug=slug)
-        products = Product.objects.filter(category=category_obj).order_by('id')
+        # Apply search filter
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
 
-    if search_query:
-        products = products.filter(name__icontains=search_query)
+        # Apply tag filter
+        if tag_filter:
+            tag_obj = get_object_or_404(Tag, name=tag_filter)
+            queryset = queryset.filter(tags=tag_obj)
 
-    if tag_filter:
-        tag_obj = get_object_or_404(Tag, name=tag_filter)
-        products = products.filter(tags=tag_obj)
+        # Apply price filter
+        queryset = queryset.filter(price__lte=max_price)
 
-    products = products.filter(price__lte=max_price)
+        return queryset
 
-    paginator = Paginator(products, 9)
-    page_number = request.GET.get('page')
-    paginated_products = paginator.get_page(page_number)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-    categories = Category.objects.all()
-    tags = Tag.objects.all()
+        # Get all categories and tags to display in the template
+        context['categories'] = Category.objects.all()
+        context['tags'] = Tag.objects.all()
 
-    context = {
-        'products': paginated_products,
-        'categories': categories,
-        'tags': tags,
-        'max_price': max_price,
-        'selected_tag': tag_filter,
-        'search_query': search_query,
-    }
+        # Pass selected filters to the template
+        context['max_price'] = self.request.GET.get('max_price', 500)
+        context['selected_tag'] = self.request.GET.get('tag')
+        context['search_query'] = self.request.GET.get('search', '')
 
-    return render(request, 'shop.html', context)
-
-
+        return context

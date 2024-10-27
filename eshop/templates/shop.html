@@ -225,28 +225,33 @@
 
                                 <div class="col-12">
                                     <div class="pagination d-flex justify-content-center mt-5">
-                                        {% if products.has_previous %}
-                                            <a href="?page=1" class="rounded">&laquo; First</a>
-                                            <a href="?page={{ products.previous_page_number }}" class="rounded">&lsaquo;
-                                                Previous</a>
-                                        {% endif %}
 
-                                        {% for page_num in products.paginator.page_range %}
-                                            {% if products.number == page_num %}
-                                                <a href="?page={{ page_num }}" class="rounded active">{{ page_num }}</a>
+{#                                        {% if page_obj.has_previous %}#}
+{#                                            <a href="?page=1" class="rounded">&laquo; First</a>#}
+{#                                            <a href="?page={{ page_obj.previous_page_number }}"#}
+{#                                               class="rounded">&lsaquo; Previous</a>#}
+{#                                        {% endif %}#}
+
+                                        {% for page_num in page_obj.paginator.page_range %}
+                                            {% if page_num == page_obj.number %}
+                                                <a href="?page={{ page_num }}"
+                                                   class="rounded active">{{ page_num }}</a>
                                             {% else %}
-                                                <a href="?page={{ page_num }}" class="rounded">{{ page_num }}</a>
+                                                <a href="?page={{ page_num }}"
+                                                   class="rounded">{{ page_num }}</a>
                                             {% endif %}
                                         {% endfor %}
 
-                                        {% if products.has_next %}
-                                            <a href="?page={{ products.next_page_number }}" class="rounded">Next
-                                                &rsaquo;</a>
-                                            <a href="?page={{ products.paginator.num_pages }}" class="rounded">Last
-                                                &raquo;</a>
-                                        {% endif %}
+{#                                        {% if page_obj.has_next %}#}
+{#                                            <a href="?page={{ page_obj.next_page_number }}"#}
+{#                                               class="rounded">Next &rsaquo;</a>#}
+{#                                            <a href="?page={{ page_obj.paginator.num_pages }}"#}
+{#                                               class="rounded">Last &raquo;</a>#}
+{#                                        {% endif %}#}
+
                                     </div>
                                 </div>
+
 
                                 <!-- Pagination End -->
 
