@@ -6,6 +6,7 @@ from debug_toolbar.toolbar import debug_toolbar_urls
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('eshop.urls', namespace='eshop')),
+    path('accounts/', include('accounts.urls')),
 ]
 
 if settings.DEBUG:

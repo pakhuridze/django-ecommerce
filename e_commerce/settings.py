@@ -13,8 +13,8 @@ SECRET_KEY = 'django-insecure-c53+6@xz$1a!a%)d$p_ool+&+h&r6^jspl1n8g7!@ke1rp3qts
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
-
+AUTH_USER_MODEL = "accounts.CustomUser"
+LOGIN_REDIRECT_URL = '/'
 # Application definition
 
 INSTALLED_APPS = [
@@ -27,7 +27,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'eshop',
     'mptt',
-    'versatileimagefield'
+    'versatileimagefield',
+    'accounts'
 ]
 
 MIDDLEWARE = [
@@ -40,6 +41,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'eshop.middleware.normalize_url_middleware.NormalizeUrlMiddleware',
+    'accounts.middleware.UserActivityMiddleware',
 ]
 
 ROOT_URLCONF = 'e_commerce.urls'

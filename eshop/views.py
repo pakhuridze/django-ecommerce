@@ -3,7 +3,7 @@ from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, TemplateView, View, FormView
 from django.http import HttpResponseNotAllowed
 from django import forms
-
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 class NotAllowedMixin(View):
     def dispatch(self, request, *args, **kwargs):
@@ -34,8 +34,10 @@ class CartForm(forms.Form):
         return cleaned_data
 
 
-class CartView(FormView):
+class CartView(LoginRequiredMixin, FormView):
     template_name = 'cart.html'
+    login_url = '/accounts/login/'  # Redirect URL for unauthenticated users
+
     form_class = CartForm
 
     def get_cart(self):
@@ -95,15 +97,16 @@ class ProductDetailView(NotAllowedMixin, DetailView):
     slug_url_kwarg = 'slug'
 
 
-class CheckoutView(NotAllowedMixin, TemplateView):
+class CheckoutView(LoginRequiredMixin, NotAllowedMixin, TemplateView):
     template_name = 'checkout.html'
+    login_url = '/accounts/login/'  # Redirect URL for unauthenticated users
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Assuming you have cart items stored in the session or database
+        # Retrieve cart items only for logged-in users
         cart_items = CartItem.objects.filter(cart=self.request.user.cart)
         context['cart_items'] = cart_items
-        # Calculate total
+        # Calculate total price
         context['total'] = sum(item.product.price * item.quantity for item in cart_items)
         return context
 
