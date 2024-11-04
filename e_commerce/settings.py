@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from django.conf import STATICFILES_STORAGE_ALIAS
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -10,9 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-c53+6@xz$1a!a%)d$p_ool+&+h&r6^jspl1n8g7!@ke1rp3qts'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 AUTH_USER_MODEL = "accounts.CustomUser"
 LOGIN_REDIRECT_URL = '/'
 # Application definition
@@ -42,6 +44,7 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'eshop.middleware.normalize_url_middleware.NormalizeUrlMiddleware',
     'accounts.middleware.UserActivityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'e_commerce.urls'
@@ -118,6 +121,10 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static'
 ]
 
+STATIC_FILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 STATIC_URL = 'static/'
 
 MEDIA_URL = '/media/'

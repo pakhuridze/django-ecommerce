@@ -1,37 +1,62 @@
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.views.decorators.vary import vary_on_cookie
+
 from .models import Cart, CartItem, Product, Tag, Category
 from django.shortcuts import redirect, get_object_or_404
-from django.views.generic import ListView, DetailView, TemplateView, View, FormView
-from django.http import HttpResponseNotAllowed
-from django import forms
+from django.views.generic import ListView, DetailView, TemplateView, FormView
+from .forms import CartForm, ContactForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.conf import settings
 
-class NotAllowedMixin(View):
-    def dispatch(self, request, *args, **kwargs):
-        if request.method not in ["GET", "OPTIONS"]:
-            return HttpResponseNotAllowed(['GET', 'OPTIONS'])
-        return super().dispatch(request, *args, **kwargs)
-
-
-class IndexView(NotAllowedMixin, TemplateView):
+class IndexView(TemplateView):
     template_name = 'index.html'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        return context
 
 
-class ContactView(NotAllowedMixin, TemplateView):
+class ContactView(FormView):
     template_name = 'contact.html'
+    form_class = ContactForm
+    success_url = reverse_lazy('eshop:contact')
 
+    def form_valid(self, form):
+        name = form.cleaned_data['name']
+        email = form.cleaned_data['email']
+        message = form.cleaned_data['message']
 
-class CartForm(forms.Form):
-    product_id = forms.IntegerField()
-    quantity = forms.IntegerField(min_value=1, initial=1)
-    action = forms.ChoiceField(choices=[("add", "Add"), ("increase", "Increase"),
-                                        ("decrease", "Decrease"), ("remove", "Remove")])
+        # Send email to admin
+        email_message = f"""
+        New contact form submission:
 
-    def clean(self):
-        cleaned_data = super().clean()
-        product_id = cleaned_data.get("product_id")
-        if not product_id:
-            raise forms.ValidationError("Product ID is required")
-        return cleaned_data
+        Name: {name}
+        Email: {email}
+        Message:
+        {message}
+        """
+
+        try:
+            send_mail(
+                subject=f'New Contact Form Submission from {name}',
+                message=email_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list="pakhuridze.tornike@gmail.com",
+                fail_silently=False,
+            )
+            messages.success(self.request, 'Thank you for your message! We will get back to you soon.')
+        except Exception as e:
+            messages.error(self.request, 'Sorry, there was an error sending your message. Please try again later.')
+
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Please correct the errors below.')
+        return super().form_invalid(form)
 
 
 class CartView(LoginRequiredMixin, FormView):
@@ -90,14 +115,14 @@ class CartView(LoginRequiredMixin, FormView):
         return redirect('eshop:cart')
 
 
-class ProductDetailView(NotAllowedMixin, DetailView):
+class ProductDetailView(DetailView):
     model = Product
     template_name = 'shop_detail.html'
     context_object_name = 'product'
     slug_url_kwarg = 'slug'
 
 
-class CheckoutView(LoginRequiredMixin, NotAllowedMixin, TemplateView):
+class CheckoutView(LoginRequiredMixin, TemplateView):
     template_name = 'checkout.html'
     login_url = '/accounts/login/'  # Redirect URL for unauthenticated users
 
@@ -111,11 +136,16 @@ class CheckoutView(LoginRequiredMixin, NotAllowedMixin, TemplateView):
         return context
 
 
-class ProductListView(NotAllowedMixin, ListView):
+class ProductListView(ListView):
     model = Product
     template_name = 'shop.html'
     context_object_name = 'products'
     paginate_by = 2
+
+    @method_decorator(vary_on_cookie)
+    @method_decorator(cache_page(60 * 10))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
     def get_queryset(self):
         # Get the category slug from the URL
