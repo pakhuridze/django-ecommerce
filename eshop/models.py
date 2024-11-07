@@ -1,15 +1,17 @@
 from django.conf import settings
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 from django.template.defaultfilters import slugify
+from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
-from versatileimagefield.fields import VersatileImageField, PPOIField
+from versatileimagefield.fields import VersatileImageField
+
 
 class Category(MPTTModel):
-    name = models.CharField(max_length=200, verbose_name="სახელი")
+    name = models.CharField(max_length=200, verbose_name=_("სახელი"))
     slug = models.SlugField(unique=True, max_length=255)
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children',
-                            verbose_name="კატეგორია")
+                            verbose_name=_("კატეგორია"))
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -31,17 +33,17 @@ class Tag(models.Model):
 
 
 class Product(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255,verbose_name=_("სახელი"))
     slug = models.SlugField(unique=True, max_length=255, blank=True)
     category = TreeForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    description = models.TextField(blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = VersatileImageField(upload_to='products/', null=True, blank=True,)
-    weight = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    country_of_origin = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True, verbose_name=_("აღწერა"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("ფასი"))
+    image = VersatileImageField(upload_to='products/', null=True, blank=True,verbose_name=_("ფოტო"))
+    weight = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_("წონა"))
+    country_of_origin = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ადგილი"))
     quality = models.CharField(max_length=50, choices=[('Organic', 'Organic'), ('Non-Organic', 'Non-Organic')])
-    min_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    tags = models.ManyToManyField(Tag, blank=True, related_name='products')
+    min_weight = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name=_("მინიმუმი წონა"))
+    tags = models.ManyToManyField(Tag, blank=True, related_name='products', verbose_name=_("ტეგები"))
 
     def __str__(self):
         return self.name

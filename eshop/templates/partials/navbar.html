@@ -1,66 +1,90 @@
+{% load i18n %}
 {% load static cache %}
 
 <!-- Navbar start -->
+
 <div class="container-fluid fixed-top">
     <div class="container px-0">
+        <form action="{% url 'set_language' %}" method="post">
+            {% csrf_token %}
+            <input name="next" type="hidden" value="{{ redirect_to }}">
+            <select name="language" id="language">
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                {% for language in languages %}
+                    <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %}>
+                        {{ language.name_local }} ({{ language.code }})
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <script>
+            document.getElementById('language').addEventListener('change', function () {
+                document.getElementById('language').form.submit();
+            });
+        </script>
+
+
         <nav class="navbar navbar-light bg-white navbar-expand-xl">
-            <a href="{% url 'eshop:index' %}" class="navbar-brand"><h1 class="text-primary display-6">Fruitables</h1>
+            <a href="{% url 'eshop:index' %}" class="navbar-brand"><h1 class="text-primary display-6">Eshop</h1>
             </a>
             <button class="navbar-toggler py-2 px-3" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarCollapse">
                 <span class="fa fa-bars text-primary"></span>
             </button>
 
-            {% with cache_key=request.user.id|default:"anonymous" %}
-            {% cache 600 "navbar__user_"|add:cache_key %}
-
-                <div class="collapse navbar-collapse bg-white" id="navbarCollapse">
+            {#            {% with cache_key=request.user.id|default:"anonymous" %}#}
+            {#            {% cache 600 "navbar__user_"|add:cache_key %}#}
+            <div class="collapse navbar-collapse bg-white" id="navbarCollapse">
                 <div class="navbar-nav mx-auto">
-                <a href="{% url 'eshop:index' %}" class="nav-item nav-link active">Home</a>
-                <a href="{% url 'eshop:category' 'all' %}" class="nav-item nav-link">Shop</a>
-                <a href="{% url 'eshop:cart' %}" class="nav-item nav-link">Cart</a>
-                <a href="{% url 'eshop:checkout' %}" class="nav-item nav-link">Checkout</a>
-                <div class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">კატეგორიები</a>
-                    <div class="dropdown-menu m-0 bg-secondary rounded-0">
-                        {% for category in categories %}
-                            <a href="{% url 'eshop:category' category.slug %}"
-                               class="dropdown-item">{{ category.name }}</a>
-                        {% endfor %}
+                    <a href="{% url 'eshop:index' %}" class="nav-item nav-link active">{% trans "მთავარი" %}</a>
+                    <a href="{% url 'eshop:category' 'all' %}" class="nav-item nav-link">{% trans "ყიდვა" %}</a>
+                    <a href="{% url 'eshop:cart' %}" class="nav-item nav-link">{% trans "კალათა" %}</a>
+                    <a href="{% url 'eshop:checkout' %}" class="nav-item nav-link">{% trans "შეკვეთა" %}</a>
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle"
+                           data-bs-toggle="dropdown">{% trans "კატეგორიები" %}</a>
+                        <div class="dropdown-menu m-0 bg-secondary rounded-0">
+                            {% for category in categories %}
+                                <a href="{% url 'eshop:category' category.slug %}"
+                                   class="dropdown-item">{{ category.name }}</a>
+                            {% endfor %}
+                        </div>
                     </div>
+                    <a href="{% url 'eshop:contact' %}" class="nav-item nav-link">{% trans "კონტაქტი" %}</a>
+                    {#            {% endcache %}#}
+                    {#            {% endwith %}#}
+
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'accounts:logout' %}" class="d-flex">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-item nav-link"
+                                    style="background: none; border: none; padding: 0;">
+                                {% trans "გამოსვლა" %}
+                            </button>
+                        </form>
+
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="nav-item nav-link">{% trans "შესვლა" %}</a>
+                        <a href="{% url 'accounts:register' %}" class="nav-item nav-link">{% trans "რეგისტრაცია" %}</a>
+                    {% endif %}
                 </div>
-                <a href="{% url 'eshop:contact' %}" class="nav-item nav-link">Contact</a>
-            {% endcache %}
-            {% endwith %}
-
-            {% if user.is_authenticated %}
-                <form method="post" action="{% url 'accounts:logout' %}" class="d-flex">
-                    {% csrf_token %}
-                    <button type="submit" class="nav-item nav-link"
-                            style="background: none; border: none; padding: 0;">
-                        Logout
+                <div class="d-flex m-3 me-0">
+                    <button class="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4"
+                            data-bs-toggle="modal" data-bs-target="#searchModal"><i
+                            class="fas fa-search text-primary"></i>
                     </button>
-                </form>
-
-            {% else %}
-                <a href="{% url 'accounts:login' %}" class="nav-item nav-link">Login</a>
-                <a href="{% url 'accounts:register' %}" class="nav-item nav-link">Register</a>
-            {% endif %}
-            </div>
-            <div class="d-flex m-3 me-0">
-                <button class="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4"
-                        data-bs-toggle="modal" data-bs-target="#searchModal"><i
-                        class="fas fa-search text-primary"></i>
-                </button>
-                <a href="{% url 'eshop:cart' %}" class="position-relative me-4 my-auto">
-                    <i class="fa fa-shopping-bag fa-2x"></i>
-                    <span class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                          style="top: -5px; left: 15px; height: 20px; min-width: 20px;">{{ cart_items_count }}</span>
-                </a>
-                <a href="#" class="my-auto">
-                    <i class="fas fa-user fa-2x"></i>
-                </a>
-            </div>
+                    <a href="{% url 'eshop:cart' %}" class="position-relative me-4 my-auto">
+                        <i class="fa fa-shopping-bag fa-2x"></i>
+                        <span class="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
+                              style="top: -5px; left: 15px; height: 20px; min-width: 20px;">{{ cart_items_count }}</span>
+                    </a>
+                    <a href="#" class="my-auto">
+                        <i class="fas fa-user fa-2x"></i>
+                    </a>
+                </div>
             </div>
         </nav>
     </div>
