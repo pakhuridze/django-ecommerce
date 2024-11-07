@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-c53+6@xz$1a!a%)d$p_ool+&+h&r6^jspl1n8g7!@ke1rp3qts'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 AUTH_USER_MODEL = "accounts.CustomUser"
@@ -20,6 +20,8 @@ LOGIN_REDIRECT_URL = '/'
 # Application definition
 
 INSTALLED_APPS = [
+    'modeltranslation',
+    'rosetta',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -105,15 +107,15 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'ka'
+LANGUAGE_CODE = 'en'
 
 LANGUAGES = [
-    ('ka', 'Georgian'),
     ('en', 'English'),
+    ('ka', 'Georgian'),
 ]
 
 LOCALE_PATHS = [BASE_DIR / 'locale']
-
+MODELTRANSLATION_DEFAULT_LANGUAGE = 'en'
 
 TIME_ZONE = 'UTC'
 
