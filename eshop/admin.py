@@ -1,22 +1,21 @@
 from django.contrib import admin
 from .models import Category, Product, Review, Cart, CartItem, Order, Tag
 from mptt.admin import DraggableMPTTAdmin
-
+from modeltranslation.admin import TranslationAdmin
 
 @admin.register(Category)
-class CategoryAdmin(DraggableMPTTAdmin):
+class CategoryAdmin(DraggableMPTTAdmin, TranslationAdmin):
     list_display = ('tree_actions', 'indented_title', 'name', 'parent')
     list_filter = ('parent',)
     search_fields = ('name',)
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(TranslationAdmin):
     list_display = ('name', 'category', 'price', 'quality', 'min_weight')
     list_filter = ('category', 'quality', 'price', 'tags')
     search_fields = ('name', 'description')
     list_editable = ('price', 'min_weight')
-
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
